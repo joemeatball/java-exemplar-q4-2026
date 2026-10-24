@@ -210,7 +210,8 @@ class CachedIdeChecksumsTest(unittest.TestCase):
             metadata = self.baseline(root)
             archive = self.archive(root / "cache")
             for extension in ("pom", "module"):
-                archive.with_name(f"library-1.0.{extension}").write_bytes(extension.encode())
+                content = b"<project/>" if extension == "pom" else b"module metadata"
+                archive.with_name(f"library-1.0.{extension}").write_bytes(content)
             self.assertEqual(self.recorder.record(metadata, root / "cache"), 3)
             for extension in ("pom", "module"):
                 self.assertIn(f'library-1.0.{extension}', metadata.read_text())
@@ -219,6 +220,38 @@ class CachedIdeChecksumsTest(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "refusing to replace"):
                 self.recorder.record(metadata, root / "cache")
             self.assertEqual(metadata.read_text(), approved)
+
+    def test_follows_parent_poms_recursively_even_when_not_in_the_binary_graph(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            metadata = self.baseline(root)
+            cache = root / "cache"
+            for name, parent in (("library", "parent"), ("parent", "grandparent"), ("grandparent", None)):
+                directory = cache / "example" / name / "1.0" / "hash"
+                directory.mkdir(parents=True)
+                declaration = (f"<parent><groupId>example</groupId><artifactId>{parent}</artifactId>"
+                               "<version>1.0</version></parent>") if parent else ""
+                (directory / f"{name}-1.0.pom").write_text(
+                    '<project xmlns="http://maven.apache.org/POM/4.0.0">' + declaration + '</project>')
+            self.assertEqual(self.recorder.record(metadata, cache), 3)
+            result = metadata.read_text()
+            self.assertIn('name="parent"', result)
+            self.assertIn('name="grandparent"', result)
+            self.assertEqual(self.recorder.record(metadata, cache), 0)
+            self.assertEqual(metadata.read_text(), result)
+
+    def test_missing_parent_cache_does_not_partially_update_metadata(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            metadata = self.baseline(root)
+            original = metadata.read_text()
+            archive = self.archive(root / "cache")
+            archive.with_name("library-1.0.pom").write_text(
+                '<project><parent><groupId>example</groupId><artifactId>missing</artifactId>'
+                '<version>1.0</version></parent></project>')
+            with self.assertRaisesRegex(ValueError, "parent POM is not cached"):
+                self.recorder.record(metadata, root / "cache")
+            self.assertEqual(metadata.read_text(), original)
 
     def test_existing_checksum_mismatch_does_not_change_metadata(self):
         with tempfile.TemporaryDirectory() as directory:

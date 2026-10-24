@@ -54,6 +54,9 @@ the application runtime or introduce new project lockfile configurations.
 The refresh script also runs `scripts/record-cached-ide-checksums.py` to capture source/Javadoc archives
 and their POM/module metadata already downloaded by the IDE for components present in the baseline. The recorder adds exact SHA-256
 entries, ignores unrelated cached components, and refuses to replace mismatched existing checksums.
+It also follows Maven parent POM references recursively, recording their exact checksums even when
+the parent is not an ordinary dependency-graph component. This avoids warm-cache baselines omitting
+parent metadata later required on clean CI runners, a [documented Gradle issue](https://github.com/gradle/gradle/issues/20194).
 To record newly downloaded IDE archives without rerunning all checks:
 
 ```sh

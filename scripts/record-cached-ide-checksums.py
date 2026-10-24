@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Record cached IDE source/docs and metadata checksums for already-pinned components."""
+"""Record cached IDE artifacts and metadata, including referenced Maven parent POMs."""
 import hashlib
 import os
 from pathlib import Path
@@ -24,8 +24,61 @@ def sha256_file(path):
 def record(metadata, cache):
     original = metadata.read_text()
     tree = ET.fromstring(original)
+    components = tree.findall("v:components/v:component", NS)
+    known = {tuple(c.get(name) for name in ("group", "name", "version")): c for c in components}
+    new_components = set()
+    pending = list(known)
+    visited = set()
+    while pending:
+        key = pending.pop()
+        if key in visited:
+            continue
+        visited.add(key)
+        group, name, version = key
+        if any(not value or "/" in value or "\\" in value or value in (".", "..") for value in key):
+            raise ValueError("Invalid component coordinates in verification metadata")
+        poms = sorted((cache / group / name / version).glob(f"*/{name}-{version}.pom"))
+        if not poms:
+            if key in new_components:
+                raise ValueError(f"Referenced parent POM is not cached: {group}:{name}:{version}")
+            continue
+        for pom in poms:
+            recorded = known[key].find(f"v:artifact[@name='{pom.name}']", NS)
+            if recorded is not None:
+                approved = {c.get("value") for c in recorded.findall("v:sha256", NS)}
+                if sha256_file(pom) not in approved:
+                    raise ValueError(f"Existing checksum does not match {pom.name}; refusing to replace it")
+            model = ET.parse(pom).getroot()
+            prefix = model.tag.split("}")[0] + "}" if model.tag.startswith("{") else ""
+            parent = model.find(prefix + "parent")
+            if parent is None:
+                continue
+            properties = {"project.version": version, "pom.version": version,
+                          "project.groupId": group, "project.artifactId": name}
+            declared = model.find(prefix + "properties")
+            if declared is not None:
+                properties.update({p.tag.split("}")[-1]: p.text or "" for p in declared})
+
+            def interpolate(value):
+                for _ in range(10):
+                    expanded = re.sub(r"\$\{([^}]+)\}", lambda m: properties.get(m.group(1), m.group(0)), value)
+                    if expanded == value:
+                        break
+                    value = expanded
+                if "${" in value:
+                    raise ValueError(f"Cannot resolve parent POM coordinate {value} in {pom.name}")
+                return value.strip()
+
+            parent_key = tuple(interpolate(parent.findtext(prefix + field, ""))
+                               for field in ("groupId", "artifactId", "version"))
+            if parent_key not in known:
+                known[parent_key] = ET.Element("{" + NAMESPACE + "}component",
+                                               dict(zip(("group", "name", "version"), parent_key)))
+                components.append(known[parent_key])
+                new_components.add(parent_key)
+            pending.append(parent_key)
     additions = {}
-    for component in tree.findall("v:components/v:component", NS):
+    for component in components:
         key = tuple(component.get(name) for name in ("group", "name", "version"))
         group, name, version = key
         # Only traverse exact coordinates already pinned by normal Gradle resolution.
@@ -74,6 +127,20 @@ def record(metadata, cache):
     count = sum(map(len, additions.values()))
     if count:
         updated = re.sub(r"(<component\b[^>]*>)(.*?)(</component>)", append_artifacts, original, flags=re.S)
+        blocks = []
+        for group, name, version in sorted(new_components):
+            artifacts = additions[(group, name, version)]
+            lines = [f"      <component group={quoteattr(group)} name={quoteattr(name)} version={quoteattr(version)}>"]
+            for filename, digest in artifacts:
+                lines.extend([
+                    f"         <artifact name={quoteattr(filename)}>",
+                    f'            <sha256 value="{digest}" origin="Computed from cached referenced parent POM; review required"/>',
+                    "         </artifact>",
+                ])
+            lines.append("      </component>")
+            blocks.append("\n".join(lines))
+        if blocks:
+            updated = updated.replace("   </components>", "\n".join(blocks) + "\n   </components>", 1)
         ET.fromstring(updated)
         metadata.write_text(updated)
     return count
@@ -86,7 +153,7 @@ def main():
         count = record(root / "gradle/verification-metadata.xml", gradle_home / "caches/modules-2/files-2.1")
     except (OSError, ValueError, ET.ParseError) as error:
         sys.exit(str(error))
-    print(f"Recorded {count} exact IDE artifact checksums for already-pinned components; review the diff.")
+    print(f"Recorded {count} exact dependency artifact checksums, including referenced parent POMs; review the diff.")
 
 
 if __name__ == "__main__":

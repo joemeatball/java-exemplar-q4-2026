@@ -59,6 +59,11 @@ All 16 maintenance tests pass on Python 3.9.6, including mocked checks that the 
 present, strict verification follows lock generation, and failures stop the script. Actual dev-mode
 lock generation still requires running the repair command outside this socket-restricted sandbox.
 
+The four parent POMs reported missing by GitHub CI are now recorded. The recorder follows parent
+declarations recursively rather than relying on the warm-cache resolved dependency graph. All 18
+maintenance tests pass on Python 3.9.6, including parent-chain traversal and refusal to partially
+update metadata when a referenced parent POM is unavailable. Hosted CI has not been rerun here.
+
 Full Gradle configuration, plugin compatibility, resolved dependency locks/checksums, pinned formatter output,
 static analysis, coverage and mutation thresholds, Quarkus boot, AWS emulator integrations, packaged
 application execution, and release archive generation require the normal network-enabled build.
