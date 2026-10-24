@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<FindBugsFilter>
+    <!-- BlobStore is an intentionally shared storage collaborator, not a value to copy.
+         ArtifactService keeps it private and never returns it to callers. -->
+    <Match>
+        <Class name="dev.exemplar.artifact.application.ArtifactService"/>
+        <Method name="&lt;init&gt;"/>
+        <Field name="blobs"/>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
+    <!-- CDI collaborators are intentionally shared; their SDK clients are thread-safe. -->
+    <Match>
+        <Class name="~dev\.exemplar\.artifact\.(aws|http)\..*"/>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
+    <!-- Download explicitly transfers ownership of an open stream to its caller. -->
+    <Match>
+        <Class name="dev.exemplar.artifact.application.Download"/>
+        <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2"/>
+    </Match>
+</FindBugsFilter>

@@ -1,0 +1,29 @@
+name: Refresh dependency baseline
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  baseline:
+    name: Generate candidate locks and checksums
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup
+      - name: Resolve and verify candidate baseline
+        run: bash scripts/refresh-dependencies.sh
+      - name: Upload candidate for review (never commits automatically)
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: dependency-baseline-candidate
+          path: |
+            gradle.lockfile
+            gradle/verification-metadata.xml
+            build/reports/
+            build/test-results/
+          if-no-files-found: error

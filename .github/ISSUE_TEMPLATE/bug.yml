@@ -1,0 +1,21 @@
+name: Bug report
+description: Report an unexpected behavior.
+body:
+  - type: textarea
+    id: behavior
+    attributes:
+      label: Expected and actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction steps
+      description: Include the command, relevant configuration, and sanitized error output.
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Java, operating system, Docker, and commit/version. Never paste credentials.

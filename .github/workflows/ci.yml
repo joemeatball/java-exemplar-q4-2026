@@ -1,0 +1,66 @@
+name: CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+  merge_group:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+env:
+  AWS_RETRY_MODE: standard
+  AWS_MAX_ATTEMPTS: '3'
+jobs:
+  verify:
+    name: ${{ matrix.name }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Unit and analysis
+            task: check
+            report: unit-analysis
+          - name: AWS integration
+            task: integrationTest
+            report: aws-integration
+          - name: Packaged JVM
+            task: quarkusIntTest
+            report: packaged-jvm
+          - name: Mutation
+            task: pitest
+            report: mutation
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          persist-credentials: false
+      - name: Require reviewed dependency baseline
+        run: python3 scripts/check-dependency-baseline.py
+      - uses: ./.github/actions/setup
+      - name: Verify
+        env:
+          VERIFY_TASK: ${{ matrix.task }}
+        run: ./gradlew --no-daemon --console=plain "$VERIFY_TASK"
+      - name: Upload reports
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: reports-${{ matrix.report }}
+          path: |
+            build/reports/
+            build/test-results/
+          if-no-files-found: ignore
+          retention-days: 14
+  wrapper:
+    name: Wrapper validation
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          persist-credentials: false
+      - uses: gradle/actions/wrapper-validation@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0

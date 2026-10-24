@@ -1,0 +1,24 @@
+@baseUrl = http://localhost:8080
+
+### Upload (the file path is relative to this examples directory)
+POST {{baseUrl}}/artifacts
+X-Request-ID: example-upload
+Content-Type: multipart/form-data; boundary=ArtifactBoundary
+
+--ArtifactBoundary
+Content-Disposition: form-data; name="file"; filename="hello.txt"
+Content-Type: text/plain
+
+< ./hello.txt
+--ArtifactBoundary--
+
+### Replace the UUID with the id from the upload response
+@artifactId = 00000000-0000-4000-8000-000000000001
+GET {{baseUrl}}/artifacts/{{artifactId}}
+
+### Download content
+GET {{baseUrl}}/artifacts/{{artifactId}}/content
+Accept: application/octet-stream
+
+### Readiness
+GET {{baseUrl}}/q/health/ready

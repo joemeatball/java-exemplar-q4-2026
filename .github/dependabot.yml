@@ -1,0 +1,21 @@
+version: 2
+updates:
+  - package-ecosystem: gradle
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    groups:
+      quarkus:
+        patterns: ['io.quarkus*', 'io.quarkiverse*']
+      quality-tools:
+        patterns: ['com.diffplug*', 'com.github.spotbugs*', 'org.pitest*', 'info.solidsoft*', 'org.cyclonedx*']
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    groups:
+      github-actions:
+        patterns: ['*']

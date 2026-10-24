@@ -1,0 +1,42 @@
+[versions]
+quarkus = "3.40.1.1"
+spotless = "8.10.3"
+spotbugsPlugin = "6.5.13"
+spotbugsTool = "4.10.5"
+pitestPlugin = "1.19.0"
+pitestTool = "1.22.0"
+pitestJunit = "1.2.3"
+cyclonedx = "3.5.1"
+assertj = "3.27.7"
+archunit = "1.4.1"
+jacoco = "0.8.14"
+pmd = "7.28.0"
+googleJavaFormat = "1.36.1"
+
+[libraries]
+quarkusBom = { module = "io.quarkus.platform:quarkus-bom", version.ref = "quarkus" }
+quarkusAwsBom = { module = "io.quarkus.platform:quarkus-amazon-services-bom", version.ref = "quarkus" }
+quarkusRestJackson = { module = "io.quarkus:quarkus-rest-jackson" }
+quarkusHealth = { module = "io.quarkus:quarkus-smallrye-health" }
+quarkusOpenapi = { module = "io.quarkus:quarkus-smallrye-openapi" }
+quarkusMetrics = { module = "io.quarkus:quarkus-micrometer-registry-prometheus" }
+quarkusOtel = { module = "io.quarkus:quarkus-opentelemetry" }
+quarkusLogging = { module = "io.quarkus:quarkus-logging-json" }
+quarkusS3 = { module = "io.quarkiverse.amazonservices:quarkus-amazon-s3" }
+quarkusDynamodb = { module = "io.quarkiverse.amazonservices:quarkus-amazon-dynamodb" }
+awsUrlConnectionClient = { module = "software.amazon.awssdk:url-connection-client" }
+quarkusJunit = { module = "io.quarkus:quarkus-junit" }
+quarkusJunitMockito = { module = "io.quarkus:quarkus-junit-mockito" }
+restAssured = { module = "io.rest-assured:rest-assured" }
+junitJupiter = { module = "org.junit.jupiter:junit-jupiter" }
+junitLauncher = { module = "org.junit.platform:junit-platform-launcher" }
+assertj = { module = "org.assertj:assertj-core", version.ref = "assertj" }
+archunit = { module = "com.tngtech.archunit:archunit", version.ref = "archunit" }
+testcontainers = { module = "org.testcontainers:testcontainers" }
+
+[plugins]
+quarkus = { id = "io.quarkus", version.ref = "quarkus" }
+spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
+spotbugs = { id = "com.github.spotbugs", version.ref = "spotbugsPlugin" }
+pitest = { id = "info.solidsoft.pitest", version.ref = "pitestPlugin" }
+cyclonedx = { id = "org.cyclonedx.bom", version.ref = "cyclonedx" }
