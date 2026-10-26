@@ -1,6 +1,6 @@
 [versions]
 quarkus = "3.40.1.1"
-spotless = "8.10.3"
+spotless = "8.10.4"
 spotbugsPlugin = "6.5.13"
 spotbugsTool = "4.10.5"
 pitestPlugin = "1.19.0"
