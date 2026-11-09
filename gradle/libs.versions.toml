@@ -1,5 +1,5 @@
 [versions]
-quarkus = "3.40.1.1"
+quarkus = "3.40.1.2"
 spotless = "8.10.3"
 spotbugsPlugin = "6.5.13"
 spotbugsTool = "4.10.5"
