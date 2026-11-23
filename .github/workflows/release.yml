@@ -22,7 +22,7 @@ jobs:
       AWS_RETRY_MODE: standard
       AWS_MAX_ATTEMPTS: '3'
     steps:
-      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
       - name: Validate version and reject existing tags
@@ -36,7 +36,7 @@ jobs:
         run: ./gradlew --no-daemon --console=plain -PreleaseVersion="$RELEASE_VERSION" verifyAll releaseChecksums
       - name: Check distribution contents
         run: python3 scripts/check-distribution.py "build/distributions/2026-exemplar-$RELEASE_VERSION.zip"
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: release-assets
           path: build/distributions/
@@ -54,7 +54,7 @@ jobs:
       GH_TOKEN: ${{ github.token }}
       GH_REPO: ${{ github.repository }}
     steps:
-      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: release-assets
           path: assets
